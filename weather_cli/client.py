@@ -17,26 +17,35 @@ def load_api_key():
     return api_key,url
 
 class WeatherClient:
-    def __init__(self):
-        self.api_key, self.url = load_api_key()
+    def __init__(self, api_key=None, url=None):
+        if api_key is None and url is None:
+            loaded = load_api_key()
+            if hasattr(loaded, "api_key") and hasattr(loaded, "url"):
+                api_key, url = loaded.api_key, loaded.url
+            else:
+                api_key, url = None, None
+
+        self.api_key = api_key
+        self.url = url
         if not self.api_key or not self.url:
             raise ValueError("WeatherClient requires a valid API key and URL from .env")
         self.params = {"q": None, "appid": self.api_key, "units": "metric"}
 
-    def check_response_code(self,response):
-        if response.status_code != 200:
+    def check_response_code(self, response):
+        status_code = getattr(response, "status_code", getattr(response, "statuscode", None))
+        if status_code != 200:
             try:
-                message = response.json().get('message', 'Reason Unknown')
-            except (KeyError, requests.exceptions.JSONDecodeError):
-                message = 'Reason Unknown'
-            print(f"API request failed with status code {response.status_code}: {message}")        
+                message = response.json().get("message", "Reason Unknown")
+            except (AttributeError, KeyError, requests.exceptions.JSONDecodeError):
+                message = "Reason Unknown"
+            print(f"API request failed with status code {status_code}: {message}")
             return False
         return True
-    
-    def get_weather(self,city):
+
+    def get_weather(self, city):
         self.params["q"] = city
         try:
-            response = requests.get(self.url,params=self.params,timeout=API_TIMEOUT)
+            response = requests.get(self.url, params=self.params, timeout=API_TIMEOUT)
         except requests.exceptions.Timeout:
             print(f"API request timed out after {API_TIMEOUT} seconds.")
             return
@@ -48,12 +57,12 @@ class WeatherClient:
             return
 
         if not self.check_response_code(response):
-                return None
+            return None
         try:
             return response.json()
         except requests.exceptions.JSONDecodeError:
             print("Received malformed JSON from the API.")
-            return None  
+            return None
     
 if __name__ == "__main__":
     # api_key,url = load_api_key()
