@@ -17,14 +17,11 @@ def load_api_key():
     return api_key,url
 
 class WeatherClient:
-    def __init__(self,api_key,url):
-        self.api_key = api_key
-        self.url = url
-        self.params = {
-            "q" : None,
-            "appid": self.api_key,
-            "units": "metric"
-        }
+    def __init__(self):
+        self.api_key, self.url = load_api_key()
+        if not self.api_key or not self.url:
+            raise ValueError("WeatherClient requires a valid API key and URL from .env")
+        self.params = {"q": None, "appid": self.api_key, "units": "metric"}
 
     def check_response_code(self,response):
         if response.status_code != 200:
@@ -59,13 +56,13 @@ class WeatherClient:
             return None  
     
 if __name__ == "__main__":
-    api_key,url = load_api_key()
+    # api_key,url = load_api_key()
 
-    if not api_key or not url:
-        print("API key or URL not found in .env file. Please check the .env file.")
-        exit(1)
+    # if not api_key or not url:
+    #     print("API key or URL not found in .env file. Please check the .env file.")
+    #     exit(1)
 
-    client = WeatherClient(api_key,url)
+    client = WeatherClient()
     city = "pune"
     # print(client.get_weather(city) if client.get_weather(city) else "No data returned.")
     result = client.get_weather(city)
